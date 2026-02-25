@@ -17,7 +17,7 @@ import { Asset } from './registries/types.js'
 import { Amulet } from './amulet/index.js'
 import { Token } from './token/index.js'
 import Party from './party/client.js'
-
+import { LedgerProvider } from '@canton-network/core-provider-ledger'
 export * from './registries/types.js'
 
 /**
@@ -123,7 +123,18 @@ export class Sdk {
             undefined, // as part of v1 we want to remove string typed access token (#803). we should modify the ScanProxyClient constructor to use named parameters and the ScanClient to accept accessTokenProvider
             options.authTokenProvider
         )
+
+        const token = isAdmin
+            ? (await options.authTokenProvider.getAdminAuthContext())
+                  .accessToken
+            : (await options.authTokenProvider.getUserAuthContext()).accessToken
+
+        const provider = new LedgerProvider({
+            baseUrl: options.ledgerClientUrl,
+            accessToken: token,
+        })
         const tokenStandardService = new TokenStandardService(
+            provider,
             ledgerClient,
             logger,
             options.authTokenProvider,
